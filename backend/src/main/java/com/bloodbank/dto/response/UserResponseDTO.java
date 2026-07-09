@@ -1,4 +1,4 @@
-package com.bloodbank.dto.request;
+package com.bloodbank.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
