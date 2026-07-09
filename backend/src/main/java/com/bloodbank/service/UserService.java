@@ -1,9 +1,12 @@
 package com.bloodbank.service;
 
-import com.bloodbank.dto.request.RegisterRequestDTO;
-import com.bloodbank.dto.response.UserResponseDTO;
+import com.bloodbank.dto.request.LoginRequestDTO;
+import com.bloodbank.dto.request.SignupRequestDTO;
+import com.bloodbank.dto.response.JWTResponseDTO;
 
 public interface UserService {
 
-    UserResponseDTO registerUser(RegisterRequestDTO  registerRequestDTO);
+    JWTResponseDTO registerUser(SignupRequestDTO registerRequestDTO);
+
+    JWTResponseDTO loginUser(LoginRequestDTO loginRequestDTO);
 }
