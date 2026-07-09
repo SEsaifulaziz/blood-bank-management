@@ -1,4 +1,9 @@
 package com.bloodbank.service;
 
-public class UserServie {
+import com.bloodbank.dto.request.RegisterRequestDTO;
+import com.bloodbank.dto.response.UserResponseDTO;
+
+public interface UserService {
+
+    UserResponseDTO registerUser(RegisterRequestDTO  registerRequestDTO);
 }
