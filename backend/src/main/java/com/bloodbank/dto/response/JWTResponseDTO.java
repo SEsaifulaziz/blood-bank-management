@@ -11,14 +11,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserResponseDTO {
+public class JWTResponseDTO {
+
+    String token;
+    @Builder.Default
+    private String type = "Bearer";
 
     private Long userId;
     private String email;
-    private String password;
     private String fullName;
-    private String phone;
     private String userRole;
-    private Boolean isActive;
-    private LocalDateTime createdAt;
 }
