@@ -9,6 +9,7 @@ import com.bloodbank.repository.UserRepository;
 import com.bloodbank.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepo;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -41,6 +43,11 @@ public class UserServiceImpl implements UserService {
         log.debug("Mapping SignupRequestDTO to structural User entity for: {}", dto.getEmail());
         User user = userMapper.toEntity(dto);
 
+        log.debug("Encrypting raw text user password: {}", user.getPassword());
+        String securePassword = passwordEncoder.encode(dto.getPassword());
+        user.setPassword(securePassword);
+
+        log.debug("persisting secure user record to database....");
         User savedUser = userRepo.save(user);
         log.info("User with email {} saved successfully", dto.getEmail());
 
