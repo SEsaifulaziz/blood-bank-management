@@ -1,5 +1,6 @@
 package com.bloodbank.controller;
 
+import com.bloodbank.dto.request.LoginRequestDTO;
 import com.bloodbank.dto.request.SignupRequestDTO;
 import com.bloodbank.dto.response.UserResponseDTO;
 import com.bloodbank.service.UserService;
@@ -21,14 +22,22 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping()
+    @PostMapping("/register")
     public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody SignupRequestDTO dto) {
         log.info("REST request received to register user account with email: {}", dto.getEmail());
-
         UserResponseDTO responseDTO = userService.registerUSer(dto);
-
         log.info("User with email {} saved successfully", dto.getEmail());
-
         return new  ResponseEntity<>(responseDTO, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<UserResponseDTO> loginUser(@Valid @RequestBody LoginRequestDTO dto) {
+        log.info("REST request received to login user account with email: {}", dto.getEmail());
+        UserResponseDTO responseDTO = userService.loginUser(dto);
+
+
+        log.info("Authentication complete. Returning profile data map container for User ID: {}",
+                responseDTO.getUserId());
+        return ResponseEntity.ok(responseDTO);
     }
 }
