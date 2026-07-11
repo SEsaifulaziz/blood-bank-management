@@ -40,8 +40,9 @@ public class SecurityConfig {
 
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(HttpMethod.POST, "api/v1/users" ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "api/v1/users/register" ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/login").permitAll()
+                        .requestMatchers("/api/v1/public/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(s -> s
