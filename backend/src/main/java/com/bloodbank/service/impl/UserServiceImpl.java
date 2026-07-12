@@ -70,7 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponseDTO loginUser(LoginRequestDTO dto) {
+    public JWTResponseDTO loginUser(LoginRequestDTO dto) {
         log.info("Processing authentication request for email: {}",
                 dto != null ? dto.getEmail() : "null");
 
@@ -84,7 +84,17 @@ public class UserServiceImpl implements UserService {
 
             User user = userRepo.findByEmail(dto.getEmail())
                     .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
-            return userMapper.toResponseDTO(user);
+
+            // Compile cryptographically signed token using the validated authentication principal context
+            String token = jwtUtils.generateToken(authentication);
+
+            return JWTResponseDTO.builder()
+                    .token(token)
+                    .userId(user.getUserId())
+                    .email(user.getEmail())
+                    .fullName(user.getFullName())
+                    .userRole(user.getUserRole() != null ? user.getUserRole().toString() : "USER")
+                    .build();
 
         }catch(Exception e){
             log.warn("Authentication fault encountered for email: {} - Reason: {}", dto.getEmail(), e.getMessage());
