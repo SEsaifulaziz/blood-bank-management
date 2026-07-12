@@ -31,11 +31,18 @@ public class JwtUtils {
     }
 
     public String generateToken(final Authentication authentication) {
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        log.info("Generating JWT token for user: {}", userPrincipal.getUsername());
+        String username;
+        Object principal = authentication.getPrincipal();
 
+        if (principal instanceof UserDetails) {
+            username = ((UserDetails) principal).getUsername();
+        } else if (principal instanceof String) {
+            username = (String) principal;
+        } else {
+            username = principal.toString();
+        }
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
+                .subject(username)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(signingKey, Jwts.SIG.HS256)
