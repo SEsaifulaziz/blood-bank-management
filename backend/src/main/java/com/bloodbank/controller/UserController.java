@@ -32,9 +32,9 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDTO> loginUser(@Valid @RequestBody LoginRequestDTO dto) {
+    public ResponseEntity<JWTResponseDTO> loginUser(@Valid @RequestBody LoginRequestDTO dto) {
         log.info("REST request received to login user account with email: {}", dto.getEmail());
-        UserResponseDTO responseDTO = userService.loginUser(dto);
+        JWTResponseDTO responseDTO = userService.loginUser(dto);
 
 
         log.info("Authentication complete. Returning profile data map container for User ID: {}",
