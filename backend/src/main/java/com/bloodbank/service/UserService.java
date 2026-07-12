@@ -9,11 +9,8 @@ import jakarta.validation.Valid;
 
 public interface UserService {
 
-//    JWTResponseDTO registerUser(SignupRequestDTO registerRequestDTO);
-//
-//    JWTResponseDTO loginUser(LoginRequestDTO loginRequestDTO);
+    JWTResponseDTO registerUser(SignupRequestDTO registerRequestDTO);
 
-    UserResponseDTO registerUSer(SignupRequestDTO dto);
+    JWTResponseDTO loginUser(LoginRequestDTO loginRequestDTO);
 
-    UserResponseDTO loginUser(LoginRequestDTO dto);
 }
