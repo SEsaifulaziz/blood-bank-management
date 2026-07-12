@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final UserDetailsService userDetailsService;
 
     @Override
     @Transactional
@@ -55,7 +58,8 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepo.save(user);
         log.info("User with email {} saved successfully", dto.getEmail());
 
-        //For registration, we can pre-authenticate them or mock an authentication reference to generate a token instantly
+
+        // Wrap the loaded principal context into the token generation token
         Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(), null);
         String token = jwtUtils.generateToken(authentication);
 
