@@ -1,7 +1,9 @@
 package com.bloodbank.service.impl;
 
+import com.bloodbank.config.JwtUtils;
 import com.bloodbank.dto.request.LoginRequestDTO;
 import com.bloodbank.dto.request.SignupRequestDTO;
+import com.bloodbank.dto.response.JWTResponseDTO;
 import com.bloodbank.dto.response.UserResponseDTO;
 import com.bloodbank.entity.User;
 import com.bloodbank.exception.DuplicateResourceException;
@@ -30,10 +32,11 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
     @Override
     @Transactional
-    public UserResponseDTO registerUSer(SignupRequestDTO dto) {
+    public JWTResponseDTO registerUser(SignupRequestDTO dto) {
       log.info("Received request to register user with email: {}",
               dto != null ? dto.getEmail() : "null");
 
@@ -46,18 +49,23 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateResourceException("User with email already exists");
         }
 
-        log.debug("Mapping SignupRequestDTO to structural User entity for: {}", dto.getEmail());
         User user = userMapper.toEntity(dto);
-
-        log.debug("Encrypting raw text user password: {}", user.getPassword());
         String securePassword = passwordEncoder.encode(dto.getPassword());
         user.setPassword(securePassword);
-
-        log.debug("persisting secure user record to database....");
         User savedUser = userRepo.save(user);
         log.info("User with email {} saved successfully", dto.getEmail());
 
-        return userMapper.toResponseDTO(savedUser);
+        //For registration, we can pre-authenticate them or mock an authentication reference to generate a token instantly
+        Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(), null);
+        String token = jwtUtils.generateToken(authentication);
+
+        return JWTResponseDTO.builder()
+                .token(token)
+                .userId(savedUser.getUserId())
+                .email(savedUser.getEmail())
+                .fullName(savedUser.getFullName())
+                .userRole(savedUser.getUserRole() != null ? savedUser.getUserRole().toString() : "USER")
+                .build();
     }
 
     @Override
