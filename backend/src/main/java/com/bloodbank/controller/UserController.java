@@ -2,6 +2,7 @@ package com.bloodbank.controller;
 
 import com.bloodbank.dto.request.LoginRequestDTO;
 import com.bloodbank.dto.request.SignupRequestDTO;
+import com.bloodbank.dto.response.JWTResponseDTO;
 import com.bloodbank.dto.response.UserResponseDTO;
 import com.bloodbank.service.UserService;
 import jakarta.validation.Valid;
@@ -16,24 +17,24 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("api/v1/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody SignupRequestDTO dto) {
+    public ResponseEntity<JWTResponseDTO> registerUser(@Valid @RequestBody SignupRequestDTO dto) {
         log.info("REST request received to register user account with email: {}", dto.getEmail());
-        UserResponseDTO responseDTO = userService.registerUSer(dto);
+        JWTResponseDTO responseDTO = userService.registerUser(dto);
         log.info("User with email {} saved successfully", dto.getEmail());
         return new  ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDTO> loginUser(@Valid @RequestBody LoginRequestDTO dto) {
+    public ResponseEntity<JWTResponseDTO> loginUser(@Valid @RequestBody LoginRequestDTO dto) {
         log.info("REST request received to login user account with email: {}", dto.getEmail());
-        UserResponseDTO responseDTO = userService.loginUser(dto);
+        JWTResponseDTO responseDTO = userService.loginUser(dto);
 
 
         log.info("Authentication complete. Returning profile data map container for User ID: {}",
