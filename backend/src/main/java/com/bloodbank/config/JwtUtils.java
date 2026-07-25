@@ -6,12 +6,16 @@ import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -33,6 +37,7 @@ public class JwtUtils {
     public String generateToken(final Authentication authentication) {
         String username;
         Object principal = authentication.getPrincipal();
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
         if (principal instanceof UserDetails) {
             username = ((UserDetails) principal).getUsername();
@@ -41,8 +46,14 @@ public class JwtUtils {
         } else {
             username = principal.toString();
         }
+
+        List<String> roles = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
         return Jwts.builder()
                 .subject(username)
+                .claim("roles", roles)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(signingKey, Jwts.SIG.HS256)
@@ -50,11 +61,13 @@ public class JwtUtils {
     }
 
     public String getUserNameFromJwtToken(final String token){
-        return Jwts.parser().verifyWith(signingKey)
+        return Jwts.parser()
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .getSubject();
+                .get("roles", List.class)
+                .toString();
     }
 
     public boolean validateJwtToken(final String authToken) {

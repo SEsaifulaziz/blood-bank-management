@@ -17,6 +17,23 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorDetails> handleInvalidCredentialsException(
+            InvalidCredentialsException ex, WebRequest webRequest) {
+
+        log.warn("Invalid credentials error: {}", ex.getMessage());
+
+        ErrorDetails errorDetails = new ErrorDetails(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                "Invalid email or password",
+                webRequest.getDescription(false)
+        );
+
+        return new ResponseEntity<>(errorDetails, HttpStatus.UNAUTHORIZED);
+    }
+
     //Catch Resource Missing Errors (HTTP 404)
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorDetails> handleResourceNotFoundException(
