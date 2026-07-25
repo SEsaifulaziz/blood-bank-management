@@ -51,6 +51,11 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateResourceException("User with email already exists");
         }
 
+        if (dto.getPhone() != null && !dto.getPhone().isBlank() && userRepo.existsByPhone(dto.getPhone())) {
+            log.warn("Registration failed: Phone number {} is already in use", dto.getPhone());
+            throw new DuplicateResourceException("Phone number is already in use");
+        }
+
         User user = userMapper.toEntity(dto);
         String securePassword = passwordEncoder.encode(dto.getPassword());
         user.setPassword(securePassword);
