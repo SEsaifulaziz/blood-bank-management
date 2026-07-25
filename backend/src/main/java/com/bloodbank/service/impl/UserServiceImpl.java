@@ -4,7 +4,6 @@ import com.bloodbank.config.JwtUtils;
 import com.bloodbank.dto.request.LoginRequestDTO;
 import com.bloodbank.dto.request.SignupRequestDTO;
 import com.bloodbank.dto.response.JWTResponseDTO;
-import com.bloodbank.dto.response.UserResponseDTO;
 import com.bloodbank.entity.User;
 import com.bloodbank.exception.DuplicateResourceException;
 import com.bloodbank.exception.InvalidCredentialsException;
@@ -16,8 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +48,6 @@ public class UserServiceImpl implements UserService {
 
         if(userRepo.existsByEmail(dto.getEmail())) {
             log.info("User with email {} already exists", dto.getEmail());
-
             throw new DuplicateResourceException("User with email already exists");
         }
 
@@ -58,9 +57,11 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepo.save(user);
         log.info("User with email {} saved successfully", dto.getEmail());
 
-
         // Wrap the loaded principal context into the token generation token
-        Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(), null);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                savedUser.getEmail(),
+                null
+        );
         String token = jwtUtils.generateToken(authentication);
 
         return JWTResponseDTO.builder()
@@ -74,7 +75,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public JWTResponseDTO loginUser(LoginRequestDTO dto) {
+    public JWTResponseDTO loginUser(LoginRequestDTO dto) throws UsernameNotFoundException {
         log.info("Processing authentication request for email: {}",
                 dto != null ? dto.getEmail() : "null");
 
@@ -82,14 +83,24 @@ public class UserServiceImpl implements UserService {
 
         try{
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                            dto.getEmail(),
+                            dto.getPassword()
+                    )
             );
             log.info("Credential validation has been satisfied");
 
             User user = userRepo.findByEmail(dto.getEmail())
-                    .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+                    .orElseThrow(() ->
+                            new InvalidCredentialsException("Invalid email or password")
+                    );
+            //check if account is active
+            if(!user.getIsActive()){
+                log.warn("Login attempt on inactive account: {}", dto.getEmail());
+                throw new InvalidCredentialsException("Account is disabled or inactive");
+            }
 
-            // Compile cryptographically signed token using the validated authentication principal context
+            // Generate cryptographically signed token using the validated authentication principal
             String token = jwtUtils.generateToken(authentication);
 
             return JWTResponseDTO.builder()
@@ -100,9 +111,18 @@ public class UserServiceImpl implements UserService {
                     .userRole(user.getUserRole() != null ? user.getUserRole().toString() : "USER")
                     .build();
 
-        }catch(Exception e){
-            log.warn("Authentication fault encountered for email: {} - Reason: {}", dto.getEmail(), e.getMessage());
+        } catch (UsernameNotFoundException ex) {
+            log.warn("User not found: {}", dto.getEmail());
             throw new InvalidCredentialsException("Invalid email or password");
+
+        } catch(AuthenticationException ex){
+            log.warn("Authentication failed for email: {} - {}",
+                    dto.getEmail(), ex.getClass().getSimpleName());
+            throw new InvalidCredentialsException("Invalid email or password");
+
+        } catch(Exception ex){
+            log.error("Unexpected error during login for email: {}", dto.getEmail(), ex);
+            throw new InvalidCredentialsException("Authentication service temporarily unavailable");
         }
     }
 }
