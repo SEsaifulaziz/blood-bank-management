@@ -2,6 +2,7 @@ package com.bloodbank.service;
 
 import com.bloodbank.entity.RefreshToken;
 import com.bloodbank.exception.ResourceNotFoundException;
+import com.bloodbank.exception.TokenRefreshException;
 import com.bloodbank.repository.RefreshTokenRepository;
 import com.bloodbank.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
