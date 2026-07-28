@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 request.getDescription(false)
         );
-        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);git
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
     }
 
 
