@@ -2,22 +2,23 @@ package com.bloodbank.entity;
 
 import com.bloodbank.model.UserRole;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(
         name = "users",
         indexes = {
-                @Index(name = "idx_email", columnList = "email"),
                 @Index(name = "idx_user_role", columnList = "user_role")
         }
 )
@@ -28,7 +29,7 @@ public class User {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(unique = true, nullable = false, length = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
     @Column(nullable = false, length = 255)
@@ -37,7 +38,7 @@ public class User {
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @Column(length = 20, unique = true)
+    @Column(unique = true, length = 20)
     private String phone;
 
     @Enumerated(EnumType.STRING)
@@ -45,14 +46,14 @@ public class User {
     private UserRole userRole;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    @Builder.Default
+    private boolean active = true;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "update_at", nullable = false)
-    private LocalDateTime updateAt;
-
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }
