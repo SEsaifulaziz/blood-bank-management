@@ -1,4 +1,4 @@
-package com.bloodbank.config;
+package com.bloodbank.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
