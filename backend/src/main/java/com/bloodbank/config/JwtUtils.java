@@ -51,6 +51,18 @@ public class JwtUtils {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
+        return  buildToken(username, roles);
+    }
+
+    public String generateTokenFromUserName(final String username, final List<String> roles) {
+        return buildToken(username, roles);
+    }
+
+    public String generateTokenFromUsername(final String username, List<String> roles) {
+        return buildToken(username, List.of("ROLE_USER"));
+    }
+
+    private String buildToken(final String username, final List<String> roles) {
         return Jwts.builder()
                 .subject(username)
                 .claim("roles", roles)
@@ -58,6 +70,7 @@ public class JwtUtils {
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(signingKey, Jwts.SIG.HS256)
                 .compact();
+
     }
 
     public String getUserNameFromJwtToken(final String token){
@@ -66,8 +79,7 @@ public class JwtUtils {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("roles", List.class)
-                .toString();
+                .getSubject();
     }
 
     public boolean validateJwtToken(final String authToken) {

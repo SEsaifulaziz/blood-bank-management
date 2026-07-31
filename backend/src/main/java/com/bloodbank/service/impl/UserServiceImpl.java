@@ -4,11 +4,13 @@ import com.bloodbank.config.JwtUtils;
 import com.bloodbank.dto.request.LoginRequestDTO;
 import com.bloodbank.dto.request.SignupRequestDTO;
 import com.bloodbank.dto.response.JWTResponseDTO;
+import com.bloodbank.entity.RefreshToken;
 import com.bloodbank.entity.User;
 import com.bloodbank.exception.DuplicateResourceException;
 import com.bloodbank.exception.InvalidCredentialsException;
 import com.bloodbank.mapper.UserMapper;
 import com.bloodbank.repository.UserRepository;
+import com.bloodbank.service.RefreshTokenService;
 import com.bloodbank.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +37,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
-    private final UserDetailsService userDetailsService;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     @Transactional
@@ -69,8 +71,11 @@ public class UserServiceImpl implements UserService {
         );
         String token = jwtUtils.generateToken(authentication);
 
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getUserId());
+
         return JWTResponseDTO.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
                 .userId(savedUser.getUserId())
                 .email(savedUser.getEmail())
                 .fullName(savedUser.getFullName())
@@ -79,7 +84,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public JWTResponseDTO loginUser(LoginRequestDTO dto) throws UsernameNotFoundException {
         log.info("Processing authentication request for email: {}",
                 dto != null ? dto.getEmail() : "null");
@@ -108,8 +113,11 @@ public class UserServiceImpl implements UserService {
             // Generate cryptographically signed token using the validated authentication principal
             String token = jwtUtils.generateToken(authentication);
 
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
+
             return JWTResponseDTO.builder()
                     .token(token)
+                    .refreshToken(refreshToken.getToken())
                     .userId(user.getUserId())
                     .email(user.getEmail())
                     .fullName(user.getFullName())

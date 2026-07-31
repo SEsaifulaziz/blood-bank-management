@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 public class JWTResponseDTO {
 
     String token;
+    private String refreshToken;
+
     @Builder.Default
     private String type = "Bearer";
 

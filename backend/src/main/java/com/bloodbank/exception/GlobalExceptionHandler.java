@@ -17,6 +17,23 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<ErrorDetails> handleTokenRefreshException(
+            TokenRefreshException ex, WebRequest request) {
+
+        log.warn("Token refresh failure: {}", ex.getMessage());
+
+        ErrorDetails body = new ErrorDetails(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.getReasonPhrase(),
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
+
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorDetails> handleInvalidCredentialsException(
             InvalidCredentialsException ex, WebRequest webRequest) {
