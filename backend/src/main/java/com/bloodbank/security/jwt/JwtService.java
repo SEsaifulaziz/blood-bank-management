@@ -3,103 +3,128 @@ package com.bloodbank.security.jwt;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Slf4j
-@Component
-public class JwtUtils {
+@Service
+@RequiredArgsConstructor
+public class JwtService {
 
+    @Value("${app.jwt.secret}")
+    private String JwtSecret;
 
-    private final SecretKey signingKey;
-    private final long jwtExpirationMs;
+    @Value("${app.jwt.expiration.ms}")
+    private long jwtExpirationMs;
 
-    public JwtUtils(
-            @Value("${app.jwt.secret}") final String jwtSecret,
-            @Value("${app.jwt.expiration.ms}") final long  jwtExpirationMs
-    ) {
-        log.info("Initializing JWT 0.12.6 engine with external configuration...");
-        this.signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        this.jwtExpirationMs = jwtExpirationMs;
+    private SecretKey signingKey;
+
+    @PostConstruct
+    private void init() {
+        signingKey = Keys.hmacShaKeyFor(
+                JwtSecret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
-    public String generateToken(final Authentication authentication) {
-        String username;
-        Object principal = authentication.getPrincipal();
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+     public String generateToken(Authentication authentication) {
 
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else if (principal instanceof String) {
-            username = (String) principal;
-        } else {
-            username = principal.toString();
-        }
+        UserDetails user =
+                (UserDetails) authentication.getPrincipal();
+          authentication.getAuthorities();
 
-        List<String> roles = authorities.stream()
+        List<String> roles = user.getAuthorities()
+                .stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+                .toList();
 
-        return  buildToken(username, roles);
+        return  buildToken(
+                user.getUsername(),
+                roles
+        );
     }
 
-    public String generateTokenFromUserName(final String username, final List<String> roles) {
-        return buildToken(username, roles);
+    public String extractUsername(String token){
+
+        try{
+
+            return extractClaim(
+                    token,
+                    Claims::getSubject
+            );
+
+        }catch (JwtException e){
+            return null;
+        }
     }
 
-    public String generateTokenFromUsername(final String username, List<String> roles) {
-        return buildToken(username, List.of("ROLE_USER"));
+    public boolean isTokenValid(
+            String token,
+            UserDetails userDetails
+    ) {
+
+       String username = extractUsername(token);
+
+       return username != null
+               && username.equals(userDetails.getUsername())
+               && !isTokenExpired(token);
     }
 
-    private String buildToken(final String username, final List<String> roles) {
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token)
+                .before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return extractClaim(
+                token,
+                Claims::getExpiration
+        );
+    }
+
+    private <T> T extractClaim(
+            String token,
+            Function<Claims, T> resolver
+    ) {
+        Claims claims = Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return resolver.apply(claims);
+    }
+
+    private String buildToken(
+            String username,
+            List<String> roles
+    ) {
         return Jwts.builder()
                 .subject(username)
                 .claim("roles", roles)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(signingKey, Jwts.SIG.HS256)
+                .expiration(
+                        new Date(
+                                System.currentTimeMillis()
+                                       + jwtExpirationMs
+                        )
+                )
+                .signWith(
+                        signingKey,
+                        Jwts.SIG.HS256
+                )
                 .compact();
-
-    }
-
-    public String getUserNameFromJwtToken(final String token){
-        return Jwts.parser()
-                .verifyWith(signingKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
-    }
-
-    public boolean validateJwtToken(final String authToken) {
-        try {
-            Jwts.parser()
-                    .verifyWith(signingKey)
-                    .build()
-                    .parseSignedClaims(authToken);
-            return true;
-        } catch (SignatureException ex) {
-            log.error("Invalid JWT signature layout confirmation failed: {}", ex.getMessage());
-        } catch (MalformedJwtException ex) {
-            log.error("Malformed JWT string payload configuration error: {}", ex.getMessage());
-        } catch (ExpiredJwtException ex) {
-            log.error("Expired JWT token life cycle limit breached: {}", ex.getMessage());
-        } catch (UnsupportedJwtException ex) {
-            log.error("Unsupported JWT format payload tracking error: {}", ex.getMessage());
-        } catch (IllegalArgumentException ex) {
-            log.error("JWT claims payload target sequence is null or empty reference: {}", ex.getMessage());
-        }
-        return false;
     }
 }
