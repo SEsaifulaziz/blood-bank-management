@@ -84,7 +84,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public JWTResponseDTO loginUser(LoginRequestDTO dto) throws UsernameNotFoundException {
         log.info("Processing authentication request for email: {}",
                 dto != null ? dto.getEmail() : "null");
