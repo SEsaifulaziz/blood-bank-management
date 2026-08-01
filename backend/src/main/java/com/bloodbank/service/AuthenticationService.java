@@ -5,7 +5,7 @@ import com.bloodbank.dto.request.SignupRequestDTO;
 import com.bloodbank.dto.response.JWTResponseDTO;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-public interface UserService {
+public interface AuthenticationService {
 
     JWTResponseDTO register(SignupRequestDTO registerRequestDTO);
 
