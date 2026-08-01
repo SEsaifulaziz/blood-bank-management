@@ -1,16 +1,14 @@
 package com.bloodbank.service.impl;
 
-import com.bloodbank.config.JwtUtils;
+import com.bloodbank.security.jwt.JwtService;
 import com.bloodbank.dto.request.LoginRequestDTO;
 import com.bloodbank.dto.request.SignupRequestDTO;
 import com.bloodbank.dto.response.JWTResponseDTO;
-import com.bloodbank.entity.RefreshToken;
 import com.bloodbank.entity.User;
 import com.bloodbank.exception.DuplicateResourceException;
 import com.bloodbank.exception.InvalidCredentialsException;
 import com.bloodbank.mapper.UserMapper;
 import com.bloodbank.repository.UserRepository;
-import com.bloodbank.service.RefreshTokenService;
 import com.bloodbank.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +16,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,12 +33,12 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final JwtUtils jwtUtils;
-    private final RefreshTokenService refreshTokenService;
+    private final JwtService jwtUtils;
+
 
     @Override
     @Transactional
-    public JWTResponseDTO registerUser(SignupRequestDTO dto) {
+    public JWTResponseDTO register(SignupRequestDTO dto) {
       log.info("Received request to register user with email: {}",
               dto != null ? dto.getEmail() : "null");
 
@@ -71,11 +68,8 @@ public class UserServiceImpl implements UserService {
         );
         String token = jwtUtils.generateToken(authentication);
 
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getUserId());
-
         return JWTResponseDTO.builder()
                 .token(token)
-                .refreshToken(refreshToken.getToken())
                 .userId(savedUser.getUserId())
                 .email(savedUser.getEmail())
                 .fullName(savedUser.getFullName())
@@ -85,7 +79,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public JWTResponseDTO loginUser(LoginRequestDTO dto) throws UsernameNotFoundException {
+    public JWTResponseDTO login(LoginRequestDTO dto) throws UsernameNotFoundException {
         log.info("Processing authentication request for email: {}",
                 dto != null ? dto.getEmail() : "null");
 
@@ -105,7 +99,7 @@ public class UserServiceImpl implements UserService {
                             new InvalidCredentialsException("Invalid email or password")
                     );
             //check if account is active
-            if(!user.getIsActive()){
+            if(!user.isActive()){
                 log.warn("Login attempt on inactive account: {}", dto.getEmail());
                 throw new InvalidCredentialsException("Account is disabled or inactive");
             }
@@ -113,11 +107,8 @@ public class UserServiceImpl implements UserService {
             // Generate cryptographically signed token using the validated authentication principal
             String token = jwtUtils.generateToken(authentication);
 
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
-
             return JWTResponseDTO.builder()
                     .token(token)
-                    .refreshToken(refreshToken.getToken())
                     .userId(user.getUserId())
                     .email(user.getEmail())
                     .fullName(user.getFullName())

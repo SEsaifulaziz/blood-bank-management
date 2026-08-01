@@ -7,8 +7,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public interface UserService {
 
-    JWTResponseDTO registerUser(SignupRequestDTO registerRequestDTO);
+    JWTResponseDTO register(SignupRequestDTO registerRequestDTO);
 
-    JWTResponseDTO loginUser(LoginRequestDTO loginRequestDTO) throws UsernameNotFoundException;
+    JWTResponseDTO login(LoginRequestDTO loginRequestDTO) throws UsernameNotFoundException;
 
 }
