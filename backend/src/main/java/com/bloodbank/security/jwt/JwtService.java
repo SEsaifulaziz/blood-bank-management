@@ -1,32 +1,26 @@
 package com.bloodbank.security.jwt;
 
-import io.jsonwebtoken.*;
+import com.bloodbank.entity.User;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class JwtService {
 
     @Value("${app.jwt.secret}")
-    private String JwtSecret;
+    private String jwtSecret;
 
     @Value("${app.jwt.expiration.ms}")
     private long jwtExpirationMs;
@@ -36,37 +30,25 @@ public class JwtService {
     @PostConstruct
     private void init() {
         signingKey = Keys.hmacShaKeyFor(
-                JwtSecret.getBytes(StandardCharsets.UTF_8)
+                jwtSecret.getBytes(StandardCharsets.UTF_8)
         );
     }
 
-     public String generateToken(Authentication authentication) {
-
-        UserDetails user =
-                (UserDetails) authentication.getPrincipal();
-          authentication.getAuthorities();
-
-        List<String> roles = user.getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
+     public String generateToken(User user) {
 
         return  buildToken(
-                user.getUsername(),
-                roles
+                user.getEmail(),
+                List.of(user.getUserRole().name())
         );
     }
 
     public String extractUsername(String token){
-
         try{
-
             return extractClaim(
                     token,
                     Claims::getSubject
             );
-
-        }catch (JwtException e){
+        }catch (JwtException | IllegalArgumentException ex){
             return null;
         }
     }
@@ -75,12 +57,16 @@ public class JwtService {
             String token,
             UserDetails userDetails
     ) {
+        try {
+            String username = extractUsername(token);
 
-       String username = extractUsername(token);
+            return username != null
+                    && username.equals(userDetails.getUsername())
+                    && !isTokenExpired(token);
 
-       return username != null
-               && username.equals(userDetails.getUsername())
-               && !isTokenExpired(token);
+        } catch (JwtException | IllegalArgumentException ex){
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token) {
@@ -115,16 +101,8 @@ public class JwtService {
                 .subject(username)
                 .claim("roles", roles)
                 .issuedAt(new Date())
-                .expiration(
-                        new Date(
-                                System.currentTimeMillis()
-                                       + jwtExpirationMs
-                        )
-                )
-                .signWith(
-                        signingKey,
-                        Jwts.SIG.HS256
-                )
+                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .signWith(signingKey, Jwts.SIG.HS256)
                 .compact();
     }
 }
