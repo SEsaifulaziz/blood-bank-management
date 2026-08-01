@@ -20,7 +20,7 @@ public class UserMapper {
         user.setFullName(dto.getFullName());
         user.setPhone(dto.getPhone());
         user.setUserRole(dto.getUserRole());
-        user.setIsActive(true); // Explicitly ensure it's active on creation
+        user.isActive(); // Explicitly ensure it's active on creation
 
         return user;
     }
@@ -36,7 +36,7 @@ public class UserMapper {
         dto.setFullName(user.getFullName());
         dto.setPhone(user.getPhone());
         dto.setUserRole(user.getUserRole());
-        dto.setIsActive(user.getIsActive());
+        dto.setIsActive(user.isActive());
         dto.setCreatedAt(user.getCreatedAt());
 
         return dto;
