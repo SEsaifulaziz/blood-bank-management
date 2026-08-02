@@ -20,25 +20,7 @@ public class UserMapper {
         user.setFullName(dto.getFullName());
         user.setPhone(dto.getPhone());
         user.setUserRole(dto.getUserRole());
-        user.isActive(); // Explicitly ensure it's active on creation
-
+        user.setActive(true);
         return user;
-    }
-
-    public UserResponseDTO toResponseDTO(User user) {
-        if (user == null) {
-            return null;
-        }
-
-        UserResponseDTO dto = new UserResponseDTO();
-        dto.setUserId(user.getUserId());
-        dto.setEmail(user.getEmail());
-        dto.setFullName(user.getFullName());
-        dto.setPhone(user.getPhone());
-        dto.setUserRole(user.getUserRole());
-        dto.setIsActive(user.isActive());
-        dto.setCreatedAt(user.getCreatedAt());
-
-        return dto;
     }
 }
