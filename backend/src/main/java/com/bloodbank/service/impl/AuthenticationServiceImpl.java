@@ -1,9 +1,9 @@
 package com.bloodbank.service.impl;
 
+import com.bloodbank.dto.response.AuthResponseDTO;
 import com.bloodbank.security.jwt.JwtService;
 import com.bloodbank.dto.request.LoginRequestDTO;
 import com.bloodbank.dto.request.SignupRequestDTO;
-import com.bloodbank.dto.response.JWTResponseDTO;
 import com.bloodbank.entity.User;
 import com.bloodbank.exception.DuplicateResourceException;
 import com.bloodbank.exception.InvalidCredentialsException;
@@ -34,7 +34,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public JWTResponseDTO register(SignupRequestDTO request) {
+    public AuthResponseDTO register(SignupRequestDTO request) {
 
         validateRegistration(request);
 
@@ -50,7 +50,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional(readOnly = true)
-    public JWTResponseDTO login(LoginRequestDTO request) throws UsernameNotFoundException {
+    public AuthResponseDTO login(LoginRequestDTO request) throws UsernameNotFoundException {
 
         try{
             CustomUserDetails customUserDetails =
@@ -96,8 +96,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    private JWTResponseDTO buildResponse(User user, String token){
-        return JWTResponseDTO.builder()
+    private AuthResponseDTO buildResponse(User user, String token){
+        return AuthResponseDTO.builder()
                 .token(token)
                 .userId(user.getUserId())
                 .email(user.getEmail())
