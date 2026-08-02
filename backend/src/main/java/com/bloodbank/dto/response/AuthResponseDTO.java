@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class JWTResponseDTO {
+public class AuthResponseDTO {
 
     String token;
     private String refreshToken;
