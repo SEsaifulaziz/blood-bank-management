@@ -1,16 +1,12 @@
 package com.bloodbank.dto.response;
 
 import com.bloodbank.model.UserRole;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
 public class UserResponseDTO {
     private Long userId;
