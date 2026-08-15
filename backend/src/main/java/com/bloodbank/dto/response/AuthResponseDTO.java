@@ -5,16 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class AuthResponseDTO {
 
-    String token;
-    private String refreshToken;
+    private String token;
 
     @Builder.Default
     private String type = "Bearer";
