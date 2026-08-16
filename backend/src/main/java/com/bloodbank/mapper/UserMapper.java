@@ -1,6 +1,7 @@
 package com.bloodbank.mapper;
 
 import com.bloodbank.dto.request.SignupRequestDTO;
+import com.bloodbank.dto.response.AuthResponseDTO;
 import com.bloodbank.dto.response.UserResponseDTO;
 import com.bloodbank.entity.User;
 import org.springframework.stereotype.Component;
@@ -13,14 +14,43 @@ public class UserMapper {
         if(dto == null){
             return null;
         }
+        return User.builder()
+                .email(dto.getEmail())
+                .password(dto.getPassword())
+                .fullName(dto.getFullName())
+                .phone(dto.getPhone())
+                .userRole(dto.getUserRole())
+                .build();
+    }
+    public AuthResponseDTO toAuthResponse(User user, String token) {
 
-        User user = new User();
-        user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword()); // Will be hashed in the service layer
-        user.setFullName(dto.getFullName());
-        user.setPhone(dto.getPhone());
-        user.setUserRole(dto.getUserRole());
-        user.setActive(true);
-        return user;
+        if (user == null) {
+            return null;
+        }
+
+        return AuthResponseDTO.builder()
+                .token(token)
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .userRole(user.getUserRole().name())
+                .build();
+    }
+
+    public UserResponseDTO toResponseDTO(User user) {
+
+        if (user == null) {
+            return null;
+        }
+
+        return UserResponseDTO.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .userRole(user.getUserRole())
+                .isActive(user.isActive())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 }
