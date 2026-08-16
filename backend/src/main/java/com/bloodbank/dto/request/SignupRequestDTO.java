@@ -20,12 +20,11 @@ public class SignupRequestDTO {
     @Size(max = 100, message = "Email cannot exceed 100 characters.")
     private String email;
 
-    @NotBlank(message = "Password is required.")
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,100}$",
-            message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, one special character, and be between 12 and 100 characters."
-    )
+    @NotBlank(message = "Password is required for registration.")
+    @Size(min = 6, max = 100,
+            message = "Password must be between 6 and 100 characters.")
     private String password;
+    
     @NotBlank(message = "Full name is required.")
     @Size(max = 100, message = "Full name cannot exceed 100 characters.")
     private String fullName;
