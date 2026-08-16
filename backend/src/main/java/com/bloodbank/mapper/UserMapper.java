@@ -1,6 +1,7 @@
 package com.bloodbank.mapper;
 
 import com.bloodbank.dto.request.SignupRequestDTO;
+import com.bloodbank.dto.response.AuthResponseDTO;
 import com.bloodbank.dto.response.UserResponseDTO;
 import com.bloodbank.entity.User;
 import org.springframework.stereotype.Component;
@@ -13,32 +14,43 @@ public class UserMapper {
         if(dto == null){
             return null;
         }
-
-        User user = new User();
-        user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword()); // Will be hashed in the service layer
-        user.setFullName(dto.getFullName());
-        user.setPhone(dto.getPhone());
-        user.setUserRole(dto.getUserRole());
-        user.setIsActive(true); // Explicitly ensure it's active on creation
-
-        return user;
+        return User.builder()
+                .email(dto.getEmail())
+                .password(dto.getPassword())
+                .fullName(dto.getFullName())
+                .phone(dto.getPhone())
+                .userRole(dto.getUserRole())
+                .build();
     }
+    public AuthResponseDTO toAuthResponse(User user, String token) {
 
-    public UserResponseDTO toResponseDTO(User user) {
         if (user == null) {
             return null;
         }
 
-        UserResponseDTO dto = new UserResponseDTO();
-        dto.setUserId(user.getUserId());
-        dto.setEmail(user.getEmail());
-        dto.setFullName(user.getFullName());
-        dto.setPhone(user.getPhone());
-        dto.setUserRole(user.getUserRole());
-        dto.setIsActive(user.getIsActive());
-        dto.setCreatedAt(user.getCreatedAt());
+        return AuthResponseDTO.builder()
+                .token(token)
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .userRole(user.getUserRole().name())
+                .build();
+    }
 
-        return dto;
+    public UserResponseDTO toResponseDTO(User user) {
+
+        if (user == null) {
+            return null;
+        }
+
+        return UserResponseDTO.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .userRole(user.getUserRole())
+                .isActive(user.isActive())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 }

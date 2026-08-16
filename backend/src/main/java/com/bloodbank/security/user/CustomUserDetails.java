@@ -1,4 +1,4 @@
-package com.bloodbank.config;
+package com.bloodbank.security.user;
 
 import com.bloodbank.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +7,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -17,10 +16,9 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if(user.getUserRole() == null){
-            return Collections.emptyList();
-        }
-        return Collections.singleton(new SimpleGrantedAuthority(user.getUserRole().name()));
+        return List.of(
+                new SimpleGrantedAuthority(user.getUserRole().name())
+        );
     }
 
     @Override
@@ -32,6 +30,7 @@ public class CustomUserDetails implements UserDetails {
     public String getUsername() {
         return user.getEmail();
     }
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -49,6 +48,10 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getIsActive();
+        return user.isActive();
+    }
+
+    public User getUser() {
+        return user;
     }
 }

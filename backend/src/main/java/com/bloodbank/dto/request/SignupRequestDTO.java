@@ -15,24 +15,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SignupRequestDTO {
 
-    @NotBlank(message = "Email is required for registration.")
+    @NotBlank(message = "Email is required.")
     @Email(message = "Invalid email format.")
     @Size(max = 100, message = "Email cannot exceed 100 characters.")
     private String email;
 
     @NotBlank(message = "Password is required for registration.")
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,100}$",
-            message = "Password must be 12+ characters with uppercase, lowercase, digit, and special character (@$!%*?&)"
-    )
+    @Size(min = 6, max = 100,
+            message = "Password must be between 6 and 100 characters.")
     private String password;
+    
     @NotBlank(message = "Full name is required.")
-    @Size(max = 100, message = "Full name must not exceed 100 characters.")
+    @Size(max = 100, message = "Full name cannot exceed 100 characters.")
     private String fullName;
 
-    @Size(max = 20, message = "Phone number must not exceed 20 characters.")
+    @Pattern(
+            regexp = "^\\+?[0-9]{10,15}$",
+            message = "Phone number is invalid.")
     private String phone;
 
-    @NotNull(message = "User role specification is required.")
+    @NotNull(message = "User role is required.")
     private UserRole userRole;
 }

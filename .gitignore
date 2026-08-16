@@ -6,3 +6,6 @@
 # OS Specific Files
 .DS_Store
 Thumbs.db
+
+### application-local.properties ###
+backend/src/main/resources/application-local.properties

@@ -1,132 +1,117 @@
 package com.bloodbank.exception;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@ControllerAdvice
-@Slf4j
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(TokenRefreshException.class)
-    public ResponseEntity<ErrorDetails> handleTokenRefreshException(
-            TokenRefreshException ex, WebRequest request) {
-
-        log.warn("Token refresh failure: {}", ex.getMessage());
-
-        ErrorDetails body = new ErrorDetails(
-                LocalDateTime.now(),
-                HttpStatus.FORBIDDEN.value(),
-                HttpStatus.FORBIDDEN.getReasonPhrase(),
-                ex.getMessage(),
-                request.getDescription(false)
-        );
-        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
-    }
-
-
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ErrorDetails> handleInvalidCredentialsException(
-            InvalidCredentialsException ex, WebRequest webRequest) {
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentialsException(
+            InvalidCredentialsException ex,
+            WebRequest request
+    ) {
 
-        log.warn("Invalid credentials error: {}", ex.getMessage());
-
-        ErrorDetails errorDetails = new ErrorDetails(
-                LocalDateTime.now(),
-                HttpStatus.UNAUTHORIZED.value(),
-                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                "Invalid email or password",
-                webRequest.getDescription(false)
-        );
-
-        return new ResponseEntity<>(errorDetails, HttpStatus.UNAUTHORIZED);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(buildErrorResponse(
+                        HttpStatus.UNAUTHORIZED,
+                        "Invalid email or password.",
+                        request
+                ));
     }
 
-    //Catch Resource Missing Errors (HTTP 404)
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorDetails> handleResourceNotFoundException(
-            ResourceNotFoundException exception, WebRequest webRequest) {
+    public ResponseEntity<ApiErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException ex,
+            WebRequest request
+    ) {
 
-        log.warn("Resource validation miss: {}", exception.getMessage());
-
-        ErrorDetails errorDetails = new ErrorDetails(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
-                exception.getMessage(),
-                webRequest.getDescription(false) // Returns the endpoint URI requested
-        );
-
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(buildErrorResponse(
+                        HttpStatus.NOT_FOUND,
+                        ex.getMessage(),
+                        request
+                ));
     }
 
-    // 409 Duplicate Resource (username / email already taken)
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ErrorDetails> handleDuplicateResourceException(
-            DuplicateResourceException ex, WebRequest request
-    ){
-        log.warn("Duplicate resource conflict: {}", ex.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleDuplicateResourceException(
+            DuplicateResourceException ex,
+            WebRequest request
+    ) {
 
-        ErrorDetails body = new ErrorDetails(
-                LocalDateTime.now(),
-                HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
-                ex.getMessage(),
-                request.getDescription(false)
-        );
-        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(buildErrorResponse(
+                        HttpStatus.CONFLICT,
+                        ex.getMessage(),
+                        request
+                ));
     }
 
-    // Catch DTO Payload Validation Errors (HTTP 400)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorDetails> handleValidException(
-            MethodArgumentNotValidException ex, WebRequest webRequest) {
-        Map<String, String> fieldErrors = new HashMap<>();
+    public ResponseEntity<ApiErrorResponse> handleValidationException(
+            MethodArgumentNotValidException ex,
+            WebRequest request
+    ) {
 
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            fieldErrors.put(fieldName, errorMessage);
+        Map<String, String> errors = new HashMap<>();
 
-            log.warn("Payload validation failed — field [{}]: {}", fieldName, errorMessage);
-        });
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            errors.put(
+                    error.getField(),
+                    error.getDefaultMessage()
+            );
+        }
 
-        ErrorDetails body = new ErrorDetails(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Request payload validation failed.",
-                webRequest.getDescription(false),
-                fieldErrors
+        ApiErrorResponse body = buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Request validation failed.",
+                request
         );
-        return new  ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+
+        body.setErrors(errors);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(body);
     }
 
-
-    // Global Catch-All: Catches any unexpected code crashes (e.g., NullPointer, Database down)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorDetails> handleException(
-            Exception exception, WebRequest webRequest) {
+    public ResponseEntity<ApiErrorResponse> handleException(
+            Exception ex,
+            WebRequest request
+    ) {
 
-        log.error("Unhandled exception: ", exception);
+        ex.printStackTrace();
 
-        ErrorDetails body = new ErrorDetails(
-                LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "An unexpected internal error occurred .",
-                webRequest.getDescription(false)
-        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(buildErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "An unexpected internal server error occurred.",
+                        request
+                ));
+    }
 
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    private ApiErrorResponse buildErrorResponse(
+            HttpStatus status,
+            String message,
+            WebRequest request
+    ) {
+
+        return ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
+                .path(request.getDescription(false))
+                .build();
     }
 }
