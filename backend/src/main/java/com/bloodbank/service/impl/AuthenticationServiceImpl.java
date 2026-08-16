@@ -14,6 +14,7 @@ import com.bloodbank.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,45 +40,43 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         validateRegistration(request);
 
         User user = userMapper.toEntity(request);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        user.setPassword(
+                passwordEncoder.encode(user.getPassword())
+        );
 
         User savedUser = userRepo.save(user);
 
         String token = jwtService.generateToken(savedUser);
 
-        return buildResponse(savedUser, token);
+        return userMapper.toAuthResponse(savedUser, token);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public AuthResponseDTO login(LoginRequestDTO request) throws UsernameNotFoundException {
+    public AuthResponseDTO login(LoginRequestDTO request) {
 
         try{
-            CustomUserDetails customUserDetails =
-                    (CustomUserDetails) authenticationManager.authenticate(
+            Authentication authentication =
+                    authenticationManager.authenticate(
                             new UsernamePasswordAuthenticationToken(
                                     request.getEmail(),
-                                    request.getPassword())
-                    ).getPrincipal();
+                                    request.getPassword()
+                            )
+                    );
 
-            User user = customUserDetails.getUser();
+            CustomUserDetails userDetails =
+                    (CustomUserDetails) authentication.getPrincipal();
 
-            if(!user.isActive()){
-                throw new InvalidCredentialsException("Account is disabled or inactive");
-            }
+            User user = userDetails.getUser();
 
             String token = jwtService.generateToken(user);
 
-            return buildResponse(user, token);
-
-        } catch (UsernameNotFoundException ex) {
-            throw new InvalidCredentialsException("Invalid email or password");
+            return userMapper.toAuthResponse(user, token);
 
         } catch(AuthenticationException ex){
-            throw new InvalidCredentialsException("Invalid email or password");
-
-        } catch(Exception ex){
-            throw new InvalidCredentialsException("Authentication service temporarily unavailable");
+            throw new InvalidCredentialsException(
+                    "Invalid email or password"
+            );
         }
 
     }
@@ -96,13 +95,4 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    private AuthResponseDTO buildResponse(User user, String token){
-        return AuthResponseDTO.builder()
-                .token(token)
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .userRole(user.getUserRole().name())
-                .build();
-    }
 }
