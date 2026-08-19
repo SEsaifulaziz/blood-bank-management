@@ -7,5 +7,5 @@
 .DS_Store
 Thumbs.db
 
-### application-local.properties ###
+# Local environment configuration
 backend/src/main/resources/application-local.properties
